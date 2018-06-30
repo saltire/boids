@@ -2,22 +2,22 @@
   "name": "boids",
   "version": "2.0.0",
   "dependencies": {
-    "inherits": "~1.0.0"
+    "inherits": "^2.0.3"
   },
   "devDependencies": {
-    "raf": "0.0.2",
-    "beefy": "~0.1.0",
-    "browserify": "~2.13.2",
-    "ticker": "0.0.1",
+    "beefy": "^2.1.8",
+    "browserify": "^16.2.2",
+    "debounce": "^1.1.0",
     "fps": "0.0.3",
-    "debounce": "0.0.2"
+    "raf": "^3.4.0",
+    "ticker": "^0.1.0"
   },
   "gitHead": "d450d79f6388cb739e55a84b11c5b38660897ac1",
   "description": "ERROR: No README.md file found!",
   "main": "index.js",
   "scripts": {
-    "prepublish": "node_modules/.bin/browserify demo.js -o bundle.js",
-    "start": "node_modules/.bin/beefy demo.js:bundle.js"
+    "prepublish": "browserify demo.js -o bundle.js",
+    "start": "beefy demo.js:bundle.js"
   },
   "repository": {
     "type": "git",
