@@ -44,124 +44,104 @@ function Boids(opts, callback) {
 inherits(Boids, EventEmitter);
 
 Boids.prototype.tick = function () {
-  const boids = this.boids;
-  const sepDist = this.separationDistance;
-  const sepForce = this.separationForce;
-  const cohDist = this.cohesionDistance;
-  const cohForce = this.cohesionForce;
-  const aliDist = this.alignmentDistance;
-  const aliForce = this.alignmentForce;
-  const speedLimit = this.speedLimit;
-  const accelerationLimit = this.accelerationLimit;
-  const accelerationLimitRoot = this.accelerationLimitRoot;
-  const speedLimitRoot = this.speedLimitRoot;
-  const size = boids.length;
-  let current = size;
-  let sforceX, sforceY;
-  let cforceX, cforceY;
-  let aforceX, aforceY;
-  let spareX, spareY;
-  const attractors = this.attractors;
-  const attractorCount = attractors.length;
-  let attractor;
-  let distSquared;
-  let currPos;
-  let length;
-  let target;
-  let ratio;
-
+  let current = this.boids.length;
   while (current--) {
-    sforceX = 0; sforceY = 0;
-    cforceX = 0; cforceY = 0;
-    aforceX = 0; aforceY = 0;
-    currPos = boids[current];
+    const boid = this.boids[current];
 
     // Attractors
-    target = attractorCount;
-    while (target--) {
-      attractor = attractors[target];
-      spareX = currPos.posX - attractor.posX;
-      spareY = currPos.posY - attractor.posY;
-      distSquared = (spareX * spareX) + (spareY * spareY);
+    let atarget = this.attractors.length;
+    while (atarget--) {
+      const attractor = this.attractors[atarget];
+      const spareX = boid.posX - attractor.posX;
+      const spareY = boid.posY - attractor.posY;
+      const distSquared = (spareX * spareX) + (spareY * spareY);
 
       if (distSquared < attractor.dist * attractor.dist) {
-        length = hypot(spareX, spareY);
-        boids[current].spdX -= (attractor.spd * spareX / length) || 0;
-        boids[current].spdY -= (attractor.spd * spareY / length) || 0;
+        const length = hypot(spareX, spareY);
+        boid.spdX -= (attractor.spd * spareX / length) || 0;
+        boid.spdY -= (attractor.spd * spareY / length) || 0;
       }
     }
 
-    target = size;
-    while (target--) {
-      if (target === current) {
+    let sforceX = 0;
+    let sforceY = 0;
+    let cforceX = 0;
+    let cforceY = 0;
+    let aforceX = 0;
+    let aforceY = 0;
+
+    // Other boids
+    let otarget = this.boids.length;
+    while (otarget--) {
+      if (otarget === current) {
         continue;
       }
-      spareX = currPos.posX - boids[target].posX;
-      spareY = currPos.posY - boids[target].posY;
-      distSquared = (spareX * spareX) + (spareY * spareY);
+      const other = this.boids[otarget];
+      const spareX = boid.posX - other.posX;
+      const spareY = boid.posY - other.posY;
+      const distSquared = (spareX * spareX) + (spareY * spareY);
 
-      if (distSquared < sepDist) {
+      if (distSquared < this.separationDistance) {
         sforceX += spareX;
         sforceY += spareY;
       }
       else {
-        if (distSquared < cohDist) {
+        if (distSquared < this.cohesionDistance) {
           cforceX += spareX;
           cforceY += spareY;
         }
-        if (distSquared < aliDist) {
-          aforceX += boids[target].spdX;
-          aforceY += boids[target].spdY;
+        if (distSquared < this.alignmentDistance) {
+          aforceX += other.spdX;
+          aforceY += other.spdY;
         }
       }
     }
 
     // Separation
-    length = hypot(sforceX, sforceY);
-    boids[current].accX += (sepForce * sforceX / length) || 0;
-    boids[current].accY += (sepForce * sforceY / length) || 0;
+    const sLength = hypot(sforceX, sforceY);
+    boid.accX += (this.separationForce * sforceX / sLength) || 0;
+    boid.accY += (this.separationForce * sforceY / sLength) || 0;
     // Cohesion
-    length = hypot(cforceX, cforceY);
-    boids[current].accX -= (cohForce * cforceX / length) || 0;
-    boids[current].accY -= (cohForce * cforceY / length) || 0;
+    const cLength = hypot(cforceX, cforceY);
+    boid.accX -= (this.cohesionForce * cforceX / cLength) || 0;
+    boid.accY -= (this.cohesionForce * cforceY / cLength) || 0;
     // Alignment
-    length = hypot(aforceX, aforceY);
-    boids[current].accX -= (aliForce * aforceX / length) || 0;
-    boids[current].accY -= (aliForce * aforceY / length) || 0;
+    const aLength = hypot(aforceX, aforceY);
+    boid.accX -= (this.alignmentForce * aforceX / aLength) || 0;
+    boid.accY -= (this.alignmentForce * aforceY / aLength) || 0;
   }
-  current = size;
 
-  // Apply speed/acceleration for
-  // this tick
+  // Apply speed/acceleration for this tick
+  current = this.boids.length;
   while (current--) {
-    if (accelerationLimit) {
-      distSquared = (boids[current].accX * boids[current].accX) +
-        (boids[current].accY * boids[current].accY);
-      if (distSquared > accelerationLimit) {
-        ratio = accelerationLimitRoot / hypot(boids[current].accX, boids[current].accY);
-        boids[current].accX *= ratio;
-        boids[current].accY *= ratio;
+    const boid = this.boids[current];
+
+    if (this.accelerationLimit) {
+      const distSquared = (boid.accX * boid.accX) + (boid.accY * boid.accY);
+      if (distSquared > this.accelerationLimit) {
+        const ratio = this.accelerationLimitRoot / hypot(boid.accX, boid.accY);
+        boid.accX *= ratio;
+        boid.accY *= ratio;
       }
     }
 
-    boids[current].spdX += boids[current].accX;
-    boids[current].spdY += boids[current].accY;
+    boid.spdX += boid.accX;
+    boid.spdY += boid.accY;
 
-    if (speedLimit) {
-      distSquared = (boids[current].spdX * boids[current].spdX) +
-        (boids[current].spdY * boids[current].spdY);
-      if (distSquared > speedLimit) {
-        ratio = speedLimitRoot / hypot(boids[current].spdX, boids[current].spdY);
-        boids[current].spdX *= ratio;
-        boids[current].spdY *= ratio;
+    if (this.speedLimit) {
+      const distSquared = (boid.spdX * boid.spdX) + (boid.spdY * boid.spdY);
+      if (distSquared > this.speedLimit) {
+        const ratio = this.speedLimitRoot / hypot(boid.spdX, boid.spdY);
+        boid.spdX *= ratio;
+        boid.spdY *= ratio;
       }
     }
 
-    boids[current].posX += boids[current].spdX;
-    boids[current].posY += boids[current].spdY;
+    boid.posX += boid.spdX;
+    boid.posY += boid.spdY;
   }
 
-  this.emit('tick', boids);
+  this.emit('tick', this.boids);
 }
 
 // double-dog-leg hypothenuse approximation
@@ -169,7 +149,7 @@ Boids.prototype.tick = function () {
 function hypot(a, b) {
   a = Math.abs(a);
   b = Math.abs(b);
-  var lo = Math.min(a, b);
-  var hi = Math.max(a, b);
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
   return hi + ((3 * lo) / 32) + (Math.max(0, (2 * lo) - hi) / 8) + (Math.max(0, (4 * lo) - hi) / 16);
 }
