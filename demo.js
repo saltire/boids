@@ -12,7 +12,7 @@ const attractors = [{
 
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
-const boids = Boids({
+const boids = new Boids({
   boids: 150,
   speedLimit: 2,
   accelerationLimit: 0.5,
