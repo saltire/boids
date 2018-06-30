@@ -2,13 +2,6 @@ const EventEmitter = require('events').EventEmitter;
 const inherits = require('inherits');
 
 
-const POSITIONX = 0;
-const POSITIONY = 1;
-const SPEEDX = 2;
-const SPEEDY = 3;
-const ACCELERATIONX = 4;
-const ACCELERATIONY = 5;
-
 module.exports = Boids;
 
 function Boids(opts, callback) {
@@ -36,11 +29,14 @@ function Boids(opts, callback) {
   const boids = this.boids = [];
   let l = opts.boids === undefined ? 50 : opts.boids;
   for (let i = 0; i < l; i += 1) {
-    boids[i] = [
-      Math.random() * 25, Math.random() * 25, // position
-      0, 0,                                   // speed
-      0, 0,                                   // acceleration
-    ];
+    boids.push({
+      posX: Math.random() * 25,
+      posY: Math.random() * 25,
+      spdX: 0,
+      spdY: 0,
+      accX: 0,
+      accY: 0,
+    });
   }
 
   this.on('tick', () => callback(boids));
@@ -84,14 +80,14 @@ Boids.prototype.tick = function () {
     target = attractorCount;
     while (target--) {
       attractor = attractors[target];
-      spareX = currPos[0] - attractor[0];
-      spareY = currPos[1] - attractor[1];
+      spareX = currPos.posX - attractor.posX;
+      spareY = currPos.posY - attractor.posY;
       distSquared = (spareX * spareX) + (spareY * spareY);
 
-      if (distSquared < attractor[2] * attractor[2]) {
+      if (distSquared < attractor.dist * attractor.dist) {
         length = hypot(spareX, spareY);
-        boids[current][SPEEDX] -= (attractor[3] * spareX / length) || 0;
-        boids[current][SPEEDY] -= (attractor[3] * spareY / length) || 0;
+        boids[current].spdX -= (attractor.spd * spareX / length) || 0;
+        boids[current].spdY -= (attractor.spd * spareY / length) || 0;
       }
     }
 
@@ -100,8 +96,8 @@ Boids.prototype.tick = function () {
       if (target === current) {
         continue;
       }
-      spareX = currPos[0] - boids[target][0];
-      spareY = currPos[1] - boids[target][1];
+      spareX = currPos.posX - boids[target].posX;
+      spareY = currPos.posY - boids[target].posY;
       distSquared = (spareX * spareX) + (spareY * spareY);
 
       if (distSquared < sepDist) {
@@ -114,24 +110,24 @@ Boids.prototype.tick = function () {
           cforceY += spareY;
         }
         if (distSquared < aliDist) {
-          aforceX += boids[target][SPEEDX];
-          aforceY += boids[target][SPEEDY];
+          aforceX += boids[target].spdX;
+          aforceY += boids[target].spdY;
         }
       }
     }
 
     // Separation
     length = hypot(sforceX, sforceY);
-    boids[current][ACCELERATIONX] += (sepForce * sforceX / length) || 0;
-    boids[current][ACCELERATIONY] += (sepForce * sforceY / length) || 0;
+    boids[current].accX += (sepForce * sforceX / length) || 0;
+    boids[current].accY += (sepForce * sforceY / length) || 0;
     // Cohesion
     length = hypot(cforceX, cforceY);
-    boids[current][ACCELERATIONX] -= (cohForce * cforceX / length) || 0;
-    boids[current][ACCELERATIONY] -= (cohForce * cforceY / length) || 0;
+    boids[current].accX -= (cohForce * cforceX / length) || 0;
+    boids[current].accY -= (cohForce * cforceY / length) || 0;
     // Alignment
     length = hypot(aforceX, aforceY);
-    boids[current][ACCELERATIONX] -= (aliForce * aforceX / length) || 0;
-    boids[current][ACCELERATIONY] -= (aliForce * aforceY / length) || 0;
+    boids[current].accX -= (aliForce * aforceX / length) || 0;
+    boids[current].accY -= (aliForce * aforceY / length) || 0;
   }
   current = size;
 
@@ -139,30 +135,30 @@ Boids.prototype.tick = function () {
   // this tick
   while (current--) {
     if (accelerationLimit) {
-      distSquared = (boids[current][ACCELERATIONX] * boids[current][ACCELERATIONX]) +
-        (boids[current][ACCELERATIONY] * boids[current][ACCELERATIONY]);
+      distSquared = (boids[current].accX * boids[current].accX) +
+        (boids[current].accY * boids[current].accY);
       if (distSquared > accelerationLimit) {
-        ratio = accelerationLimitRoot / hypot(boids[current][ACCELERATIONX], boids[current][ACCELERATIONY]);
-        boids[current][ACCELERATIONX] *= ratio;
-        boids[current][ACCELERATIONY] *= ratio;
+        ratio = accelerationLimitRoot / hypot(boids[current].accX, boids[current].accY);
+        boids[current].accX *= ratio;
+        boids[current].accY *= ratio;
       }
     }
 
-    boids[current][SPEEDX] += boids[current][ACCELERATIONX];
-    boids[current][SPEEDY] += boids[current][ACCELERATIONY];
+    boids[current].spdX += boids[current].accX;
+    boids[current].spdY += boids[current].accY;
 
     if (speedLimit) {
-      distSquared = (boids[current][SPEEDX] * boids[current][SPEEDX]) +
-        (boids[current][SPEEDY] * boids[current][SPEEDY]);
+      distSquared = (boids[current].spdX * boids[current].spdX) +
+        (boids[current].spdY * boids[current].spdY);
       if (distSquared > speedLimit) {
-        ratio = speedLimitRoot / hypot(boids[current][SPEEDX], boids[current][SPEEDY]);
-        boids[current][SPEEDX] *= ratio;
-        boids[current][SPEEDY] *= ratio;
+        ratio = speedLimitRoot / hypot(boids[current].spdX, boids[current].spdY);
+        boids[current].spdX *= ratio;
+        boids[current].spdY *= ratio;
       }
     }
 
-    boids[current][POSITIONX] += boids[current][SPEEDX];
-    boids[current][POSITIONY] += boids[current][SPEEDY];
+    boids[current].posX += boids[current].spdX;
+    boids[current].posY += boids[current].spdY;
   }
 
   this.emit('tick', boids);

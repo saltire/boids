@@ -3,12 +3,12 @@ const ticker = require('ticker');
 const debounce = require('debounce');
 const Boids = require('./');
 
-const attractors = [[
-  Infinity, // x
-  Infinity, // y
-  150, // dist
-  0.25, // spd
-]];
+const attractors = [{
+  posX: Infinity,
+  posY: Infinity,
+  dist: 150,
+  spd: 0.25,
+}];
 
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
@@ -23,8 +23,8 @@ document.body.onmousemove = (e) => {
   const halfHeight = canvas.height / 2;
   const halfWidth = canvas.width / 2;
 
-  attractors[0][0] = e.x - halfWidth;
-  attractors[0][1] = e.y - halfHeight;
+  attractors[0].posX = e.x - halfWidth;
+  attractors[0].posY = e.y - halfHeight;
 }
 
 window.onresize = debounce(() => {
@@ -52,11 +52,11 @@ ticker(window, 60)
 
     ctx.fillStyle = '#543D5E'
     for (let i = 0; i < boidData.length; i += 1) {
-      const x = boidData[i][0];
-      const y = boidData[i][1];
+      const x = boidData[i].posX;
+      const y = boidData[i].posY;
       // wrap around the screen
-      boidData[i][0] = x > halfWidth ? -halfWidth : (-x > halfWidth ? halfWidth : x);
-      boidData[i][1] = y > halfHeight ? -halfHeight : (-y > halfHeight ? halfHeight : y);
+      boidData[i].posX = x > halfWidth ? -halfWidth : (-x > halfWidth ? halfWidth : x);
+      boidData[i].posY = y > halfHeight ? -halfHeight : (-y > halfHeight ? halfHeight : y);
       ctx.fillRect(x + halfWidth, y + halfHeight, 2, 2);
     }
   });
